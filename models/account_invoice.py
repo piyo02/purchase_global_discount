@@ -187,7 +187,7 @@ class AccountInvoice(models.Model):
             }
 
             if inv.discounted_amount > 0:
-                purchase_config = self.env['purchase.config.settings'].search([], limit=1, order='id desc')
+                purchase_config = self.env['discount.global.settings'].search([], limit=1, order='id desc')
 
                 # change value credit all
                 for line in move_vals['line_ids']:
