@@ -187,16 +187,21 @@ class AccountInvoice(models.Model):
             }
 
             if inv.discounted_amount > 0:
-                purchase_config = self.env['discount.global.settings'].search([], limit=1, order='id desc')
-
+                res_company = self.env['res.company'].search([
+                    ('id', '=', self.env.user.company_id.id)
+                ])
+                account_payable = self.env['ir.property'].search([
+                    ('name', '=', 'property_account_payable_id'),
+                ])
+                account_id = int( account_payable.value_reference.split(',')[1] )
                 # change value credit all
                 for line in move_vals['line_ids']:
-                    if line[2]['account_id'] == purchase_config.account_payable_id.id:
+                    if line[2]['account_id'] == account_id:
                         line[2]['credit'] = line[2]['credit'] - inv.discounted_amount
 
                 # add line discount
                 move_vals['line_ids'].append( (0, 0, {
-                    'account_id': purchase_config.discount_product_id.property_account_income_id.id,
+                    'account_id': res_company.discount_product.property_account_income_id.id,
                     'amount_currency': 0,
                     'analytic_account_id': False,
                     'analytic_line_ids': [],
@@ -208,10 +213,10 @@ class AccountInvoice(models.Model):
                     'debit': False,
                     'invoice_id': inv.id,
                     'move_id': inv.move_id.id,
-                    'name': purchase_config.discount_product_id.name,
+                    'name': res_company.discount_product.name,
                     'partner_id': inv.partner_id.id,
-                    'product_id': purchase_config.discount_product_id.id,
-                    'product_uom_id': purchase_config.discount_product_id.uom_id.id,
+                    'product_id': res_company.discount_product.id,
+                    'product_uom_id': res_company.discount_product.uom_id.id,
                     'quantity': 1.0,
                     'tax_line_id': False,
                     'tax_ids': False,
